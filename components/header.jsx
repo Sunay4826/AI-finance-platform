@@ -8,6 +8,9 @@ import Image from "next/image";
 
 const Header = async () => {
   await checkUser();
+  const hasClerk = Boolean(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+  );
 
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
@@ -24,58 +27,73 @@ const Header = async () => {
 
         {/* Navigation Links - Different for signed in/out users */}
         <div className="hidden md:flex items-center space-x-8">
-          <SignedOut>
-            <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
-              How it Works
-            </a>
-            <a
-              href="#pricing"
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Pricing
-            </a>
-          </SignedOut>
+          {hasClerk ? (
+            <SignedOut>
+              <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+                How it Works
+              </a>
+              <a
+                href="#pricing"
+                className="text-gray-600 hover:text-blue-600"
+              >
+                Pricing
+              </a>
+            </SignedOut>
+          ) : (
+            <>
+              <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+                How it Works
+              </a>
+              <a href="#pricing" className="text-gray-600 hover:text-blue-600">
+                Pricing
+              </a>
+            </>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-4">
-          <SignedIn>
-            <Link
-              href="/dashboard"
-              className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
-            >
-              <Button variant="outline">
-                <LayoutDashboard size={18} />
-                <span className="hidden md:inline">Dashboard</span>
-              </Button>
-            </Link>
-            <a href="/transaction/create">
-              <Button className="flex items-center gap-2">
-                <PenBox size={18} />
-                <span className="hidden md:inline">Add Transaction</span>
-              </Button>
-            </a>
-            <Link href="/settings">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Settings size={18} />
-                <span className="hidden md:inline">Settings</span>
-              </Button>
-            </Link>
-          </SignedIn>
-          <SignedOut>
-            <SignInButton forceRedirectUrl="/dashboard">
-              <Button variant="outline">Login</Button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "w-10 h-10",
-                },
-              }}
-            />
-          </SignedIn>
+          {hasClerk ? (
+            <>
+              <SignedIn>
+                <Link
+                  href="/dashboard"
+                  className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+                >
+                  <Button variant="outline">
+                    <LayoutDashboard size={18} />
+                    <span className="hidden md:inline">Dashboard</span>
+                  </Button>
+                </Link>
+                <a href="/transaction/create">
+                  <Button className="flex items-center gap-2">
+                    <PenBox size={18} />
+                    <span className="hidden md:inline">Add Transaction</span>
+                  </Button>
+                </a>
+                <Link href="/settings">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Settings size={18} />
+                    <span className="hidden md:inline">Settings</span>
+                  </Button>
+                </Link>
+              </SignedIn>
+              <SignedOut>
+                <SignInButton forceRedirectUrl="/dashboard">
+                  <Button variant="outline">Login</Button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-10 h-10",
+                    },
+                  }}
+                />
+              </SignedIn>
+            </>
+          ) : null}
         </div>
       </nav>
     </header>
