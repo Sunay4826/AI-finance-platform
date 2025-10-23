@@ -5,7 +5,6 @@ import { TransactionTable } from "../_components/transaction-table";
 import { AccountHeader } from "../_components/account-header";
 import { notFound } from "next/navigation";
 import { AccountChart } from "../_components/account-chart";
-import { AISuggestionsButton } from "../_components/ai-suggestions";
 
 export default async function AccountPage({ params }) {
   const { id } = await params;

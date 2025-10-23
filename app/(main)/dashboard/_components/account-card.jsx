@@ -1,10 +1,9 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownRight, CreditCard, Trash2, MoreHorizontal } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Trash2, MoreHorizontal } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useFetch from "@/hooks/use-fetch";
 import {
   Card,
@@ -18,7 +17,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { updateDefaultAccount, deleteAccount } from "@/actions/account";
@@ -26,7 +24,6 @@ import { toast } from "sonner";
 
 export function AccountCard({ account }) {
   const { name, type, balance, id, isDefault } = account;
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const {
     loading: updateDefaultLoading,
