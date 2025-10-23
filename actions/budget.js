@@ -52,9 +52,12 @@ export async function getCurrentBudget(accountId) {
     });
 
     return {
-      budget: budget ? { ...budget, amount: budget.amount.toNumber() } : null,
+      budget: budget ? { 
+        ...budget, 
+        amount: typeof budget.amount === 'number' ? budget.amount : budget.amount.toNumber() 
+      } : null,
       currentExpenses: expenses._sum.amount
-        ? expenses._sum.amount.toNumber()
+        ? (typeof expenses._sum.amount === 'number' ? expenses._sum.amount : expenses._sum.amount.toNumber())
         : 0,
     };
   } catch (error) {
@@ -91,7 +94,10 @@ export async function updateBudget(amount) {
     revalidatePath("/dashboard");
     return {
       success: true,
-      data: { ...budget, amount: budget.amount.toNumber() },
+      data: { 
+        ...budget, 
+        amount: typeof budget.amount === 'number' ? budget.amount : budget.amount.toNumber() 
+      },
     };
   } catch (error) {
     console.error("Error updating budget:", error);

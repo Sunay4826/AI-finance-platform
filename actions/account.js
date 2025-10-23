@@ -6,10 +6,10 @@ import { revalidatePath } from "next/cache";
 
 const serializeDecimal = (obj) => {
   const serialized = { ...obj };
-  if (obj.balance) {
+  if (obj.balance && typeof obj.balance.toNumber === 'function') {
     serialized.balance = obj.balance.toNumber();
   }
-  if (obj.amount) {
+  if (obj.amount && typeof obj.amount.toNumber === 'function') {
     serialized.amount = obj.amount.toNumber();
   }
   return serialized;
@@ -217,7 +217,7 @@ export async function updateDefaultAccount(accountId) {
     });
 
     revalidatePath("/dashboard");
-    return { success: true, data: serializeTransaction(account) };
+    return { success: true, data: serializeDecimal(account) };
   } catch (error) {
     return { success: false, error: error.message };
   }

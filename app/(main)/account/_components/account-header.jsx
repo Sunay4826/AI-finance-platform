@@ -63,7 +63,7 @@ export function AccountHeader({ account }) {
         <div className="flex items-center gap-2">
           <div className="text-right">
             <div className="text-xl sm:text-2xl font-bold">
-              ${parseFloat(balance).toFixed(2)}
+              ₹{parseFloat(balance).toFixed(2)}
             </div>
             <p className="text-sm text-muted-foreground">
               {_count.transactions} Transactions

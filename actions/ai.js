@@ -2,18 +2,19 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
-const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
 
 function serializeDecimal(obj) {
   const serialized = { ...obj };
-  if (obj.balance && typeof obj.balance.toNumber === "function") {
-    serialized.balance = obj.balance.toNumber();
+  if (obj.balance) {
+    serialized.balance = typeof obj.balance === 'number' ? obj.balance : obj.balance.toNumber();
   }
-  if (obj.amount && typeof obj.amount.toNumber === "function") {
-    serialized.amount = obj.amount.toNumber();
+  if (obj.amount) {
+    serialized.amount = typeof obj.amount === 'number' ? obj.amount : obj.amount.toNumber();
   }
   return serialized;
 }
@@ -22,9 +23,9 @@ export async function getAISuggestions(accountId) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  if (!genAI) {
+  if (!openai) {
     throw new Error(
-      "AI suggestions are disabled. Add GEMINI_API_KEY or GOOGLE_API_KEY to your environment."
+      "AI suggestions are disabled. Add OPENAI_API_KEY to your environment."
     );
   }
 
@@ -46,11 +47,9 @@ export async function getAISuggestions(accountId) {
 
   if (!account) throw new Error("Account not found");
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const safeAccount = serializeDecimal(account);
   const safeBudget = budget
-    ? { ...budget, amount: budget.amount.toNumber() }
+    ? { ...budget, amount: typeof budget.amount === 'number' ? budget.amount : budget.amount.toNumber() }
     : null;
   const safeTxns = transactions.map(serializeDecimal);
 
@@ -72,9 +71,18 @@ budget = ${JSON.stringify(safeBudget)}
 transactions = ${JSON.stringify(safeTxns)}
 `; 
 
-  const result = await model.generateContent([{ text: prompt }]);
-  const response = await result.response;
-  const text = response.text().replace(/```(?:json)?\n?|```/g, "").trim();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+  });
+  
+  const text = completion.choices[0].message.content.replace(/```(?:json)?\n?|```/g, "").trim();
 
   let json;
   try {

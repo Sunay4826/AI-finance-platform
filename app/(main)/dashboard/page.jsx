@@ -47,8 +47,8 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </CreateAccountDrawer>
-        {accounts.length > 0 &&
-          accounts?.map((account) => (
+        {accounts && accounts.length > 0 &&
+          accounts.map((account) => (
             <AccountCard key={account.id} account={account} />
           ))}
       </div>

@@ -8,10 +8,10 @@ import { revalidatePath } from "next/cache";
 
 const serializeTransaction = (obj) => {
   const serialized = { ...obj };
-  if (obj.balance) {
+  if (obj.balance && typeof obj.balance.toNumber === 'function') {
     serialized.balance = obj.balance.toNumber();
   }
-  if (obj.amount) {
+  if (obj.amount && typeof obj.amount.toNumber === 'function') {
     serialized.amount = obj.amount.toNumber();
   }
   return serialized;
@@ -48,6 +48,7 @@ export async function getUserAccounts() {
     return serializedAccounts;
   } catch (error) {
     console.error(error.message);
+    return []; // Return empty array instead of undefined
   }
 }
 

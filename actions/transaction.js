@@ -3,17 +3,17 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import aj from "@/lib/arcjet";
 import { request } from "@arcjet/next";
 
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
 const serializeAmount = (obj) => ({
   ...obj,
-  amount: obj.amount.toNumber(),
+  amount: typeof obj.amount === 'number' ? obj.amount : obj.amount.toNumber(),
 });
 
 // Create Transaction
@@ -69,7 +69,7 @@ export async function createTransaction(data) {
 
     // Calculate new balance
     const balanceChange = data.type === "EXPENSE" ? -data.amount : data.amount;
-    const newBalance = account.balance.toNumber() + balanceChange;
+    const newBalance = account.balance + balanceChange;
 
     // Create transaction and update account balance
     const transaction = await db.$transaction(async (tx) => {
@@ -150,8 +150,8 @@ export async function updateTransaction(id, data) {
     // Calculate balance changes
     const oldBalanceChange =
       originalTransaction.type === "EXPENSE"
-        ? -originalTransaction.amount.toNumber()
-        : originalTransaction.amount.toNumber();
+        ? -originalTransaction.amount
+        : originalTransaction.amount;
 
     const newBalanceChange =
       data.type === "EXPENSE" ? -data.amount : data.amount;
@@ -224,8 +224,8 @@ export async function deleteTransaction(transactionId) {
 
     // Calculate balance change (reverse the original transaction)
     const balanceChange = transaction.type === "EXPENSE" 
-      ? transaction.amount.toNumber() 
-      : -transaction.amount.toNumber();
+      ? transaction.amount 
+      : -transaction.amount;
 
     // Delete transaction and update account balance in a transaction
     await db.$transaction(async (tx) => {
@@ -293,13 +293,11 @@ export async function getUserTransactions(query = {}) {
 // Scan Receipt
 export async function scanReceipt(file) {
   try {
-    if (!genAI) {
+    if (!openai) {
       throw new Error(
-        "AI receipt scanning is disabled. Add GEMINI_API_KEY to enable it."
+        "AI receipt scanning is disabled. Add OPENAI_API_KEY to your environment variables to enable it."
       );
     }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
@@ -326,36 +324,86 @@ export async function scanReceipt(file) {
       If its not a recipt, return an empty object
     `;
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: base64String,
-          mimeType: file.type,
-        },
-      },
-      prompt,
-    ]);
+    // Retry logic for API overload errors
+    let lastError;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${file.type};base64,${base64String}`
+                  }
+                }
+              ]
+            }
+          ],
+          temperature: 0.1,
+        });
 
-    const response = await result.response;
-    const text = response.text();
-    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
+        const text = completion.choices[0].message.content;
+        const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
-    try {
-      const data = JSON.parse(cleanedText);
-      return {
-        amount: parseFloat(data.amount),
-        date: new Date(data.date),
-        description: data.description,
-        category: data.category,
-        merchantName: data.merchantName,
-      };
-    } catch (parseError) {
-      console.error("Error parsing JSON response:", parseError);
-      throw new Error("Invalid response format from Gemini");
+        try {
+          const data = JSON.parse(cleanedText);
+          return {
+            amount: parseFloat(data.amount),
+            date: new Date(data.date),
+            description: data.description,
+            category: data.category,
+            merchantName: data.merchantName,
+          };
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          throw new Error("Invalid response format from OpenAI");
+        }
+      } catch (error) {
+        lastError = error;
+        console.log(`Attempt ${attempt} failed:`, error.message);
+        
+        // If it's a quota error, don't retry
+        if (error.message.includes("429") || error.message.includes("quota") || error.message.includes("insufficient_quota")) {
+          throw new Error("OpenAI API quota exceeded. Please check your billing and usage limits at https://platform.openai.com/account/billing");
+        }
+        
+        // If it's a 503 error and we have attempts left, wait and retry
+        if (error.message.includes("503") || error.message.includes("overloaded")) {
+          if (attempt < 3) {
+            console.log(`Waiting ${attempt * 2} seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            continue;
+          }
+        }
+        
+        // For other errors or final attempt, throw immediately
+        throw error;
+      }
     }
+    
+    // If we get here, all retries failed
+    throw lastError;
   } catch (error) {
     console.error("Error scanning receipt:", error);
-    throw new Error("Failed to scan receipt");
+    
+    // Provide more specific error messages
+    if (error.message.includes("429") || error.message.includes("quota") || error.message.includes("insufficient_quota")) {
+      throw new Error("OpenAI API quota exceeded. Please check your billing and usage limits at https://platform.openai.com/account/billing");
+    } else if (error.message.includes("503") || error.message.includes("overloaded")) {
+      throw new Error("OpenAI API is currently overloaded. Please try again in a few minutes.");
+    } else if (error.message.includes("API key")) {
+      throw new Error("Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.");
+    } else {
+      throw new Error(`Failed to scan receipt: ${error.message}`);
+    }
   }
 }
 

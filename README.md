@@ -36,7 +36,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/onboarding
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
 
-GEMINI_API_KEY=
+OPENAI_API_KEY=
 
 RESEND_API_KEY=
 
@@ -59,4 +59,4 @@ ARCJET_KEY=
 ## Notes
 
 - Clerk URLs are already set to in-app routes: `/sign-in`, `/sign-up`
-- Optional: `RESEND_API_KEY` for emails, `ARCJET_KEY` for rate limiting, `GEMINI_API_KEY` for AI features
+- Optional: `RESEND_API_KEY` for emails, `ARCJET_KEY` for rate limiting, `OPENAI_API_KEY` for AI features
