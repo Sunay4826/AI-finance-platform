@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { AuthButtons, AuthNavigation } from "./auth-wrapper";
+import { AuthButtons, AuthNavigation } from "./auth-components";
 
 const Header = () => {
   const hasClerk = Boolean(

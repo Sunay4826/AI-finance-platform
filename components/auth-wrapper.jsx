@@ -4,8 +4,23 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
 import { PenBox, LayoutDashboard, Settings } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export function AuthButtons() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center space-x-4">
+        <div className="text-sm text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <SignedIn>
@@ -50,6 +65,25 @@ export function AuthButtons() {
 }
 
 export function AuthNavigation() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <>
+        <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+          How it Works
+        </a>
+        <a href="#pricing" className="text-gray-600 hover:text-blue-600">
+          Pricing
+        </a>
+      </>
+    );
+  }
+
   return (
     <>
       <SignedOut>
