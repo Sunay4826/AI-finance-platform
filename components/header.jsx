@@ -7,10 +7,15 @@ import { checkUser } from "@/lib/checkUser";
 import Image from "next/image";
 
 const Header = async () => {
-  await checkUser();
   const hasClerk = Boolean(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder" &&
+    process.env.CLERK_SECRET_KEY
   );
+  
+  if (hasClerk) {
+    await checkUser();
+  }
 
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
@@ -93,7 +98,11 @@ const Header = async () => {
                 />
               </SignedIn>
             </>
-          ) : null}
+          ) : (
+            <div className="text-sm text-gray-500">
+              Configure Clerk authentication to enable login
+            </div>
+          )}
         </div>
       </nav>
     </header>
