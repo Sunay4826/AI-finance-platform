@@ -2,14 +2,5 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "DIRECT_URL": "@direct_url",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key",
-    "CLERK_SECRET_KEY": "@clerk_secret_key",
-    "OPENAI_API_KEY": "@openai_api_key",
-    "RESEND_API_KEY": "@resend_api_key",
-    "ARCJET_KEY": "@arcjet_key"
-  }
+  "installCommand": "npm install"
 }
