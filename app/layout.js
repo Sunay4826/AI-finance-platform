@@ -12,9 +12,14 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const publishableKeyRaw = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const publishableKey = typeof publishableKeyRaw === "string" ? publishableKeyRaw.trim() : undefined;
+  const safeClerkKey = publishableKey && /^pk_(test|live)_/.test(publishableKey)
+    ? publishableKey
+    : "pk_test_placeholder";
   return (
     <ClerkProvider 
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder"}
+      publishableKey={safeClerkKey}
     >
       <html lang="en">
         <head>
