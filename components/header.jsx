@@ -8,6 +8,7 @@ const Header = () => {
   const [mounted, setMounted] = useState(false);
   const [AuthButtons, setAuthButtons] = useState(null);
   const [AuthNavigation, setAuthNavigation] = useState(null);
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
     setMounted(true);
@@ -24,19 +25,43 @@ const Header = () => {
     };
 
     loadAuthComponents();
+
+    // Initialize theme
+    try {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem("theme") : null;
+      const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initial = stored || (prefersDark ? "dark" : "light");
+      setTheme(initial);
+      if (initial === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {}
   }, []);
 
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    if (next === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    try { window.localStorage.setItem("theme", next); } catch {}
+  };
+
   const hasClerk = Boolean(
+    typeof window !== 'undefined' && 
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder" &&
-    process.env.CLERK_SECRET_KEY
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "pk_test_placeholder"
   );
 
   // Don't render anything until mounted to prevent hydration issues
   if (!mounted) {
     return (
-      <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
-        <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="fixed top-0 w-full z-50">
+        <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-b-xl">
           <Link href="/">
             <Image
               src={"/logo.png"}
@@ -47,15 +72,30 @@ const Header = () => {
             />
           </Link>
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               How it Works
             </a>
-            <a href="#pricing" className="text-gray-600 hover:text-blue-600">
+            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </a>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-500">Loading...</div>
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-accent transition-colors"
+            >
+              {theme === "dark" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                  <path d="M21.64 13.65A9 9 0 0 1 10.35 2.36 7 7 0 1 0 21.64 13.65z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                  <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0 4a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm0-20a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zM3 11a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm16 0a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1zM5.64 18.36a1 1 0 0 1 1.41 0l.71.71a1 1 0 0 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41zM16.24 5.64a1 1 0 0 1 1.41 0l.71.71a1 1 0 0 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41zM18.36 18.36a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM7.05 5.64a1 1 0 0 1 0 1.41l-.71.71A1 1 0 1 1 4.93 6.35l.71-.71a1 1 0 0 1 1.41 0z"/>
+                </svg>
+              )}
+            </button>
+            <div className="text-sm text-muted-foreground">Loading...</div>
           </div>
         </nav>
       </header>
@@ -63,8 +103,8 @@ const Header = () => {
   }
 
   return (
-    <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
-      <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <header className="fixed top-0 w-full z-50">
+      <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-b-xl">
         <Link href="/">
           <Image
             src={"/logo.png"}
@@ -92,11 +132,26 @@ const Header = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2">
+          <button
+            aria-label="Toggle theme"
+            onClick={toggleTheme}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-accent transition-colors"
+          >
+            {theme === "dark" ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M21.64 13.65A9 9 0 0 1 10.35 2.36 7 7 0 1 0 21.64 13.65z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0 4a1 1 0 0 1-1-1v-1a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1zm0-20a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zM3 11a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm16 0a1 1 0 0 1 1-1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1zM5.64 18.36a1 1 0 0 1 1.41 0l.71.71a1 1 0 0 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41zM16.24 5.64a1 1 0 0 1 1.41 0l.71.71a1 1 0 0 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41zM18.36 18.36a1 1 0 0 1 0 1.41l-.71.71a1 1 0 1 1-1.41-1.41l.71-.71a1 1 0 0 1 1.41 0zM7.05 5.64a1 1 0 0 1 0 1.41l-.71.71A1 1 0 1 1 4.93 6.35l.71-.71a1 1 0 0 1 1.41 0z"/>
+              </svg>
+            )}
+          </button>
           {hasClerk && AuthButtons ? (
             <AuthButtons />
           ) : (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Configure Clerk authentication to enable login
             </div>
           )}

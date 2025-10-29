@@ -79,7 +79,7 @@ export function DashboardOverview({ accounts, transactions }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {/* Recent Transactions Card */}
-      <Card>
+      <Card className="hover:shadow-lg transition-all duration-200 border border-border/70 hover:border-border elevate">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-base font-normal">
             Recent Transactions
@@ -101,7 +101,7 @@ export function DashboardOverview({ accounts, transactions }) {
           </Select>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {recentTransactions.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">
                 No recent transactions
@@ -110,7 +110,7 @@ export function DashboardOverview({ accounts, transactions }) {
               recentTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-accent/50 transition-colors"
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
@@ -145,7 +145,7 @@ export function DashboardOverview({ accounts, transactions }) {
       </Card>
 
       {/* Expense Breakdown Card */}
-      <Card>
+      <Card className="hover:shadow-lg transition-all duration-200 border border-border/70 hover:border-border elevate">
         <CardHeader>
           <CardTitle className="text-base font-normal">
             Monthly Expense Breakdown
