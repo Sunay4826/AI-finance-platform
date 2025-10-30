@@ -1,0 +1,84 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Allow only one concurrent deployment
+    concurrency:
+      group: "pages"
+      cancel-in-progress: true
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Next.js for static export
+        run: |
+          REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)
+          cat > next.config.mjs << 'EOF'
+          /** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            basePath: '/$REPO_NAME',
+            trailingSlash: true,
+            
+            images: {
+              remotePatterns: [
+                {
+                  protocol: "https",
+                  hostname: "randomuser.me",
+                },
+              ],
+              unoptimized: true,
+            },
+          };
+
+          export default nextConfig;
+          EOF
+
+      - name: Build static site
+        run: npm run build
+        env:
+          # Add your environment variables here
+          # These are public-facing, don't include secrets
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /onboarding
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /onboarding
+
+      - name: Add .nojekyll file
+        run: touch ./out/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './out'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

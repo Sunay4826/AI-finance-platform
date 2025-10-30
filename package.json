@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:static": "next build",
     "start": "next start",
     "lint": "next lint",
     "email": "email dev",
@@ -25,13 +26,13 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@react-email/components": "0.0.30",
+    "@react-email/components": "^0.0.35",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "inngest": "^3.27.4",
     "lucide-react": "^0.462.0",
-    "next": "15.0.3",
+    "next": "^15.2.3",
     "next-themes": "^0.4.3",
     "openai": "^6.6.0",
     "react": "18.3.1",
@@ -49,10 +50,10 @@
   },
   "devDependencies": {
     "eslint": "^8",
-    "eslint-config-next": "15.0.3",
+    "eslint-config-next": "^15.2.3",
     "postcss": "^8",
     "prisma": "^6.0.1",
-    "react-email": "3.0.3",
+    "react-email": "^4.3.2",
     "tailwindcss": "^3.4.1"
   }
 }

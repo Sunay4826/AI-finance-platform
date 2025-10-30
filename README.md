@@ -43,11 +43,24 @@ RESEND_API_KEY=
 ARCJET_KEY=
 ```
 
-## Deploy (Vercel + GitHub Actions)
+## Deploy
 
-- Add the same env vars in Vercel Project Settings → Environment Variables
-- Add to GitHub repo secrets if using Actions: `DATABASE_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and any keys above
-- Each push to `main` runs migrations and deploys
+### Recommended: Vercel (Best for this app)
+
+**With GitHub Actions:**
+1. Create project on [vercel.com](https://vercel.com)
+2. Add environment variables in Vercel dashboard
+3. Get tokens from Vercel Project Settings → General
+4. Add GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+5. Push to `main` - auto deploys via GitHub Actions
+
+**Alternative:** GitHub Pages (Limited - see deployment docs)
+- ⚠️ Static export only - many features won't work
+- No database, authentication, or API routes
+- Not recommended for this app
+
+**📖 Need detailed steps?** → See [STEPS_FOR_DEPLOYMENT.md](./STEPS_FOR_DEPLOYMENT.md)  
+**📚 Full deployment guide** → [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## Useful commands
 
