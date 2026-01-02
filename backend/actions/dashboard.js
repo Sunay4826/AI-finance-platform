@@ -22,11 +22,19 @@ export async function getUserAccounts() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  // Check and create user if needed
-  const user = await checkUser();
-  if (!user) throw new Error("User not found");
-
   try {
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        console.error("User not found after retry");
+        return []; // Return empty array instead of throwing
+      }
+    }
+
     const accounts = await db.account.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -44,8 +52,8 @@ export async function getUserAccounts() {
 
     return serializedAccounts;
   } catch (error) {
-    console.error(error.message);
-    return []; // Return empty array instead of undefined
+    console.error("Error in getUserAccounts:", error);
+    return []; // Return empty array instead of throwing
   }
 }
 
@@ -80,9 +88,16 @@ export async function createAccount(data) {
       throw new Error("Request blocked");
     }
 
-    // Check and create user if needed
-    const user = await checkUser();
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     // Convert balance to float before saving
     const balanceFloat = parseFloat(data.balance);
@@ -132,15 +147,28 @@ export async function getDashboardData() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  // Check and create user if needed
-  const user = await checkUser();
-  if (!user) throw new Error("User not found");
+  try {
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        console.error("User not found after retry");
+        return []; // Return empty array instead of throwing
+      }
+    }
 
-  // Get all user transactions
-  const transactions = await db.transaction.findMany({
-    where: { userId: user.id },
-    orderBy: { date: "desc" },
-  });
+    // Get all user transactions
+    const transactions = await db.transaction.findMany({
+      where: { userId: user.id },
+      orderBy: { date: "desc" },
+    });
 
-  return transactions.map(serializeTransaction);
+    return transactions.map(serializeTransaction);
+  } catch (error) {
+    console.error("Error in getDashboardData:", error);
+    return []; // Return empty array instead of throwing
+  }
 }

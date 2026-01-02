@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { checkUser } from "@/lib/checkUser";
 import OpenAI from "openai";
 
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
@@ -29,8 +30,16 @@ export async function getAISuggestions(accountId) {
     );
   }
 
-  const user = await db.user.findUnique({ where: { clerkUserId: userId } });
-  if (!user) throw new Error("User not found");
+  // Check and create user if needed - retry on failure
+  let user = await checkUser();
+  if (!user) {
+    // Retry once after a short delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    user = await checkUser();
+    if (!user) {
+      throw new Error("User not found");
+    }
+  }
 
   // Fetch account, budget, and recent transactions
   const [account, budget, transactions] = await Promise.all([

@@ -49,9 +49,16 @@ export async function createTransaction(data) {
       throw new Error("Request blocked");
     }
 
-    // Check and create user if needed
-    const user = await checkUser();
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     const account = await db.account.findUnique({
       where: {
@@ -112,11 +119,16 @@ export async function getTransaction(id) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!user) throw new Error("User not found");
+  // Check and create user if needed - retry on failure
+  let user = await checkUser();
+  if (!user) {
+    // Retry once after a short delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    user = await checkUser();
+    if (!user) {
+      throw new Error("User not found");
+    }
+  }
 
   const transaction = await db.transaction.findUnique({
     where: {
@@ -135,11 +147,16 @@ export async function updateTransaction(id, data) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     // Get original transaction to calculate balance change
     const originalTransaction = await db.transaction.findUnique({
@@ -209,9 +226,16 @@ export async function deleteTransaction(transactionId) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    // Check and create user if needed
-    const user = await checkUser();
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     // Get transaction to calculate balance change
     const transaction = await db.transaction.findUnique({
@@ -266,9 +290,16 @@ export async function getUserTransactions(query = {}) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    // Check and create user if needed
-    const user = await checkUser();
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     const transactions = await db.transaction.findMany({
       where: {

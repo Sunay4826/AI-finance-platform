@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { checkUser } from "@/lib/checkUser";
 
 const serializeDecimal = (obj) => {
   const serialized = { ...obj };
@@ -19,11 +20,16 @@ export async function getAccountWithTransactions(accountId) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!user) throw new Error("User not found");
+  // Check and create user if needed - retry on failure
+  let user = await checkUser();
+  if (!user) {
+    // Retry once after a short delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    user = await checkUser();
+    if (!user) {
+      throw new Error("User not found");
+    }
+  }
 
   const account = await db.account.findUnique({
     where: {
@@ -53,11 +59,16 @@ export async function bulkDeleteTransactions(transactionIds) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) throw new Error("User not found");
+    // Check and create user if needed - retry on failure
+    let user = await checkUser();
+    if (!user) {
+      // Retry once after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      user = await checkUser();
+      if (!user) {
+        throw new Error("User not found");
+      }
+    }
 
     // Get transactions to calculate balance changes
     const transactions = await db.transaction.findMany({

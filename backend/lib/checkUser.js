@@ -9,7 +9,8 @@ export const checkUser = async () => {
   }
 
   try {
-    const loggedInUser = await db.user.findUnique({
+    // First, try to find existing user
+    let loggedInUser = await db.user.findUnique({
       where: {
         clerkUserId: user.id,
       },
@@ -19,19 +20,36 @@ export const checkUser = async () => {
       return loggedInUser;
     }
 
-    const name = `${user.firstName} ${user.lastName}`;
+    // User doesn't exist, create it
+    const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.emailAddresses[0]?.emailAddress || 'User';
+    const email = user.emailAddresses[0]?.emailAddress || '';
 
-    const newUser = await db.user.create({
+    loggedInUser = await db.user.create({
       data: {
         clerkUserId: user.id,
         name,
-        imageUrl: user.imageUrl,
-        email: user.emailAddresses[0].emailAddress,
+        imageUrl: user.imageUrl || null,
+        email,
       },
     });
 
-    return newUser;
+    return loggedInUser;
   } catch (error) {
-    console.log(error.message);
+    console.error("Error in checkUser:", error);
+    // Try to find user again in case of race condition
+    try {
+      const existingUser = await db.user.findUnique({
+        where: {
+          clerkUserId: user.id,
+        },
+      });
+      if (existingUser) {
+        return existingUser;
+      }
+    } catch (retryError) {
+      console.error("Error retrying user lookup:", retryError);
+    }
+    // Re-throw the error so calling code can handle it
+    throw new Error(`Failed to create or find user: ${error.message}`);
   }
 };
