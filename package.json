@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "next lint",
     "email": "email dev",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate --schema=backend/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=backend/prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=backend/prisma/schema.prisma",
+    "db:generate": "prisma generate --schema=backend/prisma/schema.prisma"
   },
   "dependencies": {
     "@arcjet/next": "^1.0.0-alpha.34",
