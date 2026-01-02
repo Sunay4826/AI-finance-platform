@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { ensureUser } from "@/actions/user";
 
+// Force dynamic rendering since we need to access user authentication
+export const dynamic = 'force-dynamic';
+
 export default async function OnboardingPage() {
   try {
     // Ensure user is created in database
