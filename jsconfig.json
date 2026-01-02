@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/components/*": ["./frontend/components/*"],
+      "@/hooks/*": ["./frontend/hooks/*"],
+      "@/data/*": ["./frontend/data/*"],
+      "@/actions/*": ["./backend/actions/*"],
+      "@/lib/*": ["./backend/lib/*"],
+      "@/emails/*": ["./backend/emails/*"],
+      "@/*": ["./*"]
+    }
+  }
+}
