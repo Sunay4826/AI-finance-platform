@@ -13,6 +13,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
   DrawerTrigger,
   DrawerClose,
 } from "@/components/ui/drawer";
@@ -78,6 +79,9 @@ export function CreateAccountDrawer({ children }) {
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Create New Account</DrawerTitle>
+          <DrawerDescription>
+            Add a new account and choose its default settings.
+          </DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-4">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

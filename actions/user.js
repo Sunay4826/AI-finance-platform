@@ -3,6 +3,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
+import { checkUser } from "@/lib/checkUser";
+
+export async function ensureUser() {
+  return await checkUser();
+}
 
 export async function deleteUserAccount() {
   try {

@@ -2,6 +2,7 @@
 
 import aj from "@/lib/arcjet";
 import { db } from "@/lib/prisma";
+import { checkUser } from "@/lib/checkUser";
 import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
@@ -17,17 +18,25 @@ const serializeTransaction = (obj) => {
   return serialized;
 };
 
-export async function getUserAccounts() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
+const getOrCreateUser = async () => {
+  let user = await checkUser();
+  if (!user) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    user = await checkUser();
+  }
 
   if (!user) {
     throw new Error("User not found");
   }
+
+  return user;
+};
+
+export async function getUserAccounts() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await getOrCreateUser();
 
   try {
     const accounts = await db.account.findMany({
@@ -83,13 +92,7 @@ export async function createAccount(data) {
       throw new Error("Request blocked");
     }
 
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await getOrCreateUser();
 
     // Convert balance to float before saving
     const balanceFloat = parseFloat(data.balance);
@@ -139,13 +142,7 @@ export async function getDashboardData() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
+  const user = await getOrCreateUser();
 
   // Get all user transactions
   const transactions = await db.transaction.findMany({

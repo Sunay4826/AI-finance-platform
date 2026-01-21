@@ -3,7 +3,14 @@
 import { useEffect } from "react";
 import useFetch from "@/hooks/use-fetch";
 import { Button } from "@/components/ui/button";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { Loader2, Sparkles } from "lucide-react";
 import { getAISuggestions } from "@/actions/ai";
 
@@ -34,12 +41,12 @@ export function AISuggestionsButton({ accountId }) {
         </Button>
       </DrawerTrigger>
       <DrawerContent className="p-6 space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold">AI Suggestions</h3>
-          <p className="text-sm text-muted-foreground">
+        <DrawerHeader className="p-0 space-y-2 text-left">
+          <DrawerTitle className="text-xl">AI Suggestions</DrawerTitle>
+          <DrawerDescription>
             Personalized recommendations to improve your financial planning.
-          </p>
-        </div>
+          </DrawerDescription>
+        </DrawerHeader>
 
         {!suggestions && !loading && (
           <div className="text-sm text-muted-foreground">
