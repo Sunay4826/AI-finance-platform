@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "vercel-build": "npx prisma migrate deploy --schema=backend/prisma/schema.prisma && npm run build",
     "build:static": "next build",
     "start": "next start",
     "lint": "next lint",
