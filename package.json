@@ -5,15 +5,15 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "vercel-build": "npx prisma migrate deploy --schema=backend/prisma/schema.prisma && npm run build",
+    "vercel-build": "npx prisma migrate deploy --schema=prisma/schema.prisma && npm run build",
     "build:static": "next build",
     "start": "next start",
     "lint": "next lint",
     "email": "email dev",
-    "postinstall": "prisma generate --schema=backend/prisma/schema.prisma",
-    "db:push": "prisma db push --schema=backend/prisma/schema.prisma",
-    "db:migrate": "prisma migrate deploy --schema=backend/prisma/schema.prisma",
-    "db:generate": "prisma generate --schema=backend/prisma/schema.prisma"
+    "postinstall": "prisma generate --schema=prisma/schema.prisma",
+    "db:push": "prisma db push --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:generate": "prisma generate --schema=prisma/schema.prisma"
   },
   "dependencies": {
     "@arcjet/next": "^1.0.0-alpha.34",
