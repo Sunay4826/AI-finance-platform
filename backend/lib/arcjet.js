@@ -9,9 +9,9 @@ const aj = hasKey
       rules: [
         tokenBucket({
           mode: "LIVE",
-          refillRate: 10,
+          refillRate: 120,
           interval: 3600,
-          capacity: 10,
+          capacity: 120,
         }),
       ],
     })
