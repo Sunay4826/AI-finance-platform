@@ -28,39 +28,41 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="pt-40 pb-20 px-4">
+    <section className="pt-36 pb-16 px-4">
       <div className="container mx-auto text-center">
-        <h1 className="text-5xl md:text-8xl lg:text-[105px] pb-6 gradient-title">
-          Manage Your Finances <br /> with Intelligence
+        <span className="hero-kicker">Minimal finance OS</span>
+        <h1 className="hero-title">
+          Beautiful money tracking,
+          <br className="hidden md:block" /> without the noise.
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          An AI-powered financial management platform that helps you track,
-          analyze, and optimize your spending with real-time insights.
+        <p className="hero-subtitle">
+          Welth helps you manage accounts, budgets, and transactions in one
+          calm dashboard with practical AI insights.
         </p>
-        <div className="flex justify-center">
+        <div className="mt-8 flex justify-center">
           <SignedOut>
             <Link href="/sign-in">
-              <Button size="lg" className="px-8">
-                Sign In
+              <Button size="lg" className="px-8 bg-teal-700 hover:bg-teal-800 text-white rounded-xl">
+                Start for Free
               </Button>
             </Link>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard">
-              <Button size="lg" className="px-8">
-                Get Started
+              <Button size="lg" className="px-8 bg-teal-700 hover:bg-teal-800 text-white rounded-xl">
+                Open Dashboard
               </Button>
             </Link>
           </SignedIn>
         </div>
-        <div className="hero-image-wrapper mt-5 md:mt-0">
+        <div className="hero-image-wrapper mt-10 md:mt-12">
           <div ref={imageRef} className="hero-image">
             <Image
               src={`/banner.jpeg?v=${process.env.NEXT_PUBLIC_ASSET_VERSION || '1'}`}
               width={1280}
               height={720}
               alt="Dashboard Preview"
-              className="rounded-lg shadow-2xl border mx-auto"
+              className="rounded-2xl border border-slate-300/80 shadow-[0_30px_60px_-35px_rgba(15,23,42,0.45)] mx-auto"
               priority
             />
           </div>

@@ -7,33 +7,47 @@ import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
+const toFiniteNumber = (value) => {
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const errorMessage = (error, fallback = "Request failed") => {
+  if (error instanceof Error && typeof error.message === "string") {
+    return error.message;
+  }
+  if (typeof error === "string") return error;
+  return fallback;
+};
+
 const serializeTransaction = (obj) => {
   const serialized = { ...obj };
-  if (obj.balance) {
-    serialized.balance = typeof obj.balance === 'number' ? obj.balance : obj.balance.toNumber();
+  if (obj.balance !== null && obj.balance !== undefined) {
+    serialized.balance = toFiniteNumber(obj.balance) ?? 0;
   }
-  if (obj.amount) {
-    serialized.amount = typeof obj.amount === 'number' ? obj.amount : obj.amount.toNumber();
+  if (obj.amount !== null && obj.amount !== undefined) {
+    serialized.amount = toFiniteNumber(obj.amount) ?? 0;
   }
   return serialized;
 };
 
-export async function getUserAccounts() {
+const getAuthenticatedDbUser = async () => {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
+  const existingUser = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+  if (existingUser) return existingUser;
+
+  const createdUser = await checkUser();
+  if (!createdUser) throw new Error("User not found");
+  return createdUser;
+};
+
+export async function getUserAccounts() {
   try {
-    // Check and create user if needed - retry on failure
-    let user = await checkUser();
-    if (!user) {
-      // Retry once after a short delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      user = await checkUser();
-      if (!user) {
-        console.error("User not found after retry");
-        return []; // Return empty array instead of throwing
-      }
-    }
+    const user = await getAuthenticatedDbUser();
 
     const accounts = await db.account.findMany({
       where: { userId: user.id },
@@ -62,42 +76,38 @@ export async function createAccount(data) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    // Get request data for ArcJet
-    const req = await request();
+    const isDevelopment = process.env.NODE_ENV !== "production";
 
-    // Check rate limit
-    const decision = await aj.protect(req, {
-      userId,
-      requested: 1, // Specify how many tokens to consume
-    });
+    // Skip ArcJet rate-limiting in local development for smoother testing.
+    if (!isDevelopment) {
+      // Get request data for ArcJet
+      const req = await request();
 
-    if (decision.isDenied()) {
-      if (decision.reason.isRateLimit()) {
-        const { remaining, reset } = decision.reason;
-        console.error({
-          code: "RATE_LIMIT_EXCEEDED",
-          details: {
-            remaining,
-            resetInSeconds: reset,
-          },
-        });
+      // Check rate limit
+      const decision = await aj.protect(req, {
+        userId,
+        requested: 1, // Specify how many tokens to consume
+      });
 
-        throw new Error("Too many requests. Please try again later.");
-      }
+      if (decision.isDenied()) {
+        if (decision.reason.isRateLimit()) {
+          const { remaining, reset } = decision.reason;
+          console.error({
+            code: "RATE_LIMIT_EXCEEDED",
+            details: {
+              remaining,
+              resetInSeconds: reset,
+            },
+          });
 
-      throw new Error("Request blocked");
-    }
+          throw new Error("Too many requests. Please try again later.");
+        }
 
-    // Check and create user if needed - retry on failure
-    let user = await checkUser();
-    if (!user) {
-      // Retry once after a short delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      user = await checkUser();
-      if (!user) {
-        throw new Error("User not found");
+        throw new Error("Request blocked");
       }
     }
+
+    const user = await getAuthenticatedDbUser();
 
     // Convert balance to float before saving
     const balanceFloat = parseFloat(data.balance);
@@ -139,26 +149,13 @@ export async function createAccount(data) {
     revalidatePath("/dashboard");
     return { success: true, data: serializedAccount };
   } catch (error) {
-    throw new Error(error.message);
+    throw new Error(errorMessage(error, "Failed to create account"));
   }
 }
 
 export async function getDashboardData() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
   try {
-    // Check and create user if needed - retry on failure
-    let user = await checkUser();
-    if (!user) {
-      // Retry once after a short delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      user = await checkUser();
-      if (!user) {
-        console.error("User not found after retry");
-        return []; // Return empty array instead of throwing
-      }
-    }
+    const user = await getAuthenticatedDbUser();
 
     // Get all user transactions
     const transactions = await db.transaction.findMany({
@@ -170,5 +167,86 @@ export async function getDashboardData() {
   } catch (error) {
     console.error("Error in getDashboardData:", error);
     return []; // Return empty array instead of throwing
+  }
+}
+
+export async function getDashboardBootstrap() {
+  try {
+    const user = await getAuthenticatedDbUser();
+
+    const [accounts, transactions] = await Promise.all([
+      db.account.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: {
+              transactions: true,
+            },
+          },
+        },
+      }),
+      db.transaction.findMany({
+        where: { userId: user.id },
+        orderBy: { date: "desc" },
+      }),
+    ]);
+
+    const defaultAccount = accounts.find((account) => account.isDefault);
+
+    let budgetData = { budget: null, currentExpenses: 0 };
+    if (defaultAccount) {
+      const budget = await db.budget.findFirst({
+        where: { userId: user.id },
+      });
+
+      const currentDate = new Date();
+      const startOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0
+      );
+
+      const expenses = await db.transaction.aggregate({
+        where: {
+          userId: user.id,
+          type: "EXPENSE",
+          accountId: defaultAccount.id,
+          date: {
+            gte: startOfMonth,
+            lte: endOfMonth,
+          },
+        },
+        _sum: { amount: true },
+      });
+
+      budgetData = {
+        budget: budget
+          ? {
+              ...budget,
+              amount: toFiniteNumber(budget.amount) ?? 0,
+            }
+          : null,
+        currentExpenses: toFiniteNumber(expenses?._sum?.amount) ?? 0,
+      };
+    }
+
+    return {
+      accounts: accounts.map(serializeTransaction),
+      transactions: transactions.map(serializeTransaction),
+      budgetData,
+    };
+  } catch (error) {
+    console.error("Error in getDashboardBootstrap:", error);
+    return {
+      accounts: [],
+      transactions: [],
+      budgetData: { budget: null, currentExpenses: 0 },
+    };
   }
 }

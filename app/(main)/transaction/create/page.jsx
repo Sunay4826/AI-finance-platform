@@ -5,8 +5,14 @@ import { getTransaction } from "@/actions/transaction";
 
 export default async function AddTransactionPage({ searchParams }) {
   const accounts = await getUserAccounts();
-  const { edit } = await searchParams;
+  const { edit, accountId } = await searchParams;
   const editId = edit;
+  const preferredAccountId = accountId;
+  const validPreferredAccountId = accounts.some(
+    (account) => account.id === preferredAccountId
+  )
+    ? preferredAccountId
+    : null;
 
   let initialData = null;
   if (editId) {
@@ -24,6 +30,7 @@ export default async function AddTransactionPage({ searchParams }) {
         categories={defaultCategories}
         editMode={!!editId}
         initialData={initialData}
+        preferredAccountId={validPreferredAccountId}
       />
     </div>
   );

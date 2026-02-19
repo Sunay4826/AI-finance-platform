@@ -21,10 +21,10 @@ export const AuthNavigation = dynamic(
     ssr: false,
     loading: () => (
       <>
-        <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+        <a href="#how-it-works" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
           How it Works
         </a>
-        <a href="#pricing" className="text-gray-600 hover:text-blue-600">
+        <a href="#pricing" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
           Pricing
         </a>
       </>

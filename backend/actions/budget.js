@@ -5,6 +5,13 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { checkUser } from "@/lib/checkUser";
 
+const MAX_BUDGET_AMOUNT = 1_000_000_000;
+
+const toFiniteNumber = (value) => {
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
 export async function getCurrentBudget(accountId) {
   try {
     const { userId } = await auth();
@@ -55,14 +62,18 @@ export async function getCurrentBudget(accountId) {
       },
     });
 
+    const budgetAmount = budget ? toFiniteNumber(budget.amount) : null;
+    const currentExpenses = toFiniteNumber(expenses?._sum?.amount) ?? 0;
+
     return {
-      budget: budget ? { 
-        ...budget, 
-        amount: typeof budget.amount === 'number' ? budget.amount : (budget.amount && typeof budget.amount.toNumber === 'function' ? budget.amount.toNumber() : budget.amount)
-      } : null,
-      currentExpenses: expenses._sum.amount
-        ? (typeof expenses._sum.amount === 'number' ? expenses._sum.amount : (expenses._sum.amount && typeof expenses._sum.amount.toNumber === 'function' ? expenses._sum.amount.toNumber() : expenses._sum.amount))
-        : 0,
+      budget:
+        budget && budgetAmount !== null
+          ? {
+              ...budget,
+              amount: budgetAmount,
+            }
+          : null,
+      currentExpenses,
     };
   } catch (error) {
     console.error("Error fetching budget:", error);
@@ -81,26 +92,34 @@ export async function updateBudget(amount) {
 
     if (!user) throw new Error("User not found");
 
+    const normalizedAmount = toFiniteNumber(amount);
+    if (normalizedAmount === null || normalizedAmount <= 0) {
+      throw new Error("Please enter a valid budget amount");
+    }
+    if (normalizedAmount > MAX_BUDGET_AMOUNT) {
+      throw new Error("Budget amount is too large");
+    }
+
     // Update or create budget
     const budget = await db.budget.upsert({
       where: {
         userId: user.id,
       },
       update: {
-        amount,
+        amount: normalizedAmount,
       },
       create: {
         userId: user.id,
-        amount,
+        amount: normalizedAmount,
       },
     });
 
     revalidatePath("/dashboard");
     return {
       success: true,
-      data: { 
-        ...budget, 
-        amount: typeof budget.amount === 'number' ? budget.amount : (budget.amount && typeof budget.amount.toNumber === 'function' ? budget.amount.toNumber() : budget.amount)
+      data: {
+        ...budget,
+        amount: toFiniteNumber(budget.amount) ?? normalizedAmount,
       },
     };
   } catch (error) {

@@ -18,10 +18,15 @@ import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
 
 export function BudgetProgress({ initialBudget, currentExpenses }) {
+  const budgetAmount = Number(initialBudget?.amount);
+  const safeBudgetAmount =
+    Number.isFinite(budgetAmount) && budgetAmount > 0 ? budgetAmount : 0;
+  const safeCurrentExpenses = Number.isFinite(Number(currentExpenses))
+    ? Number(currentExpenses)
+    : 0;
+
   const [isEditing, setIsEditing] = useState(false);
-  const [newBudget, setNewBudget] = useState(
-    initialBudget?.amount?.toString() || ""
-  );
+  const [newBudget, setNewBudget] = useState(safeBudgetAmount ? safeBudgetAmount.toString() : "");
 
   const {
     loading: isLoading,
@@ -30,8 +35,8 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
     error,
   } = useFetch(updateBudget);
 
-  const percentUsed = initialBudget
-    ? (currentExpenses / initialBudget.amount) * 100
+  const percentUsed = safeBudgetAmount
+    ? (safeCurrentExpenses / safeBudgetAmount) * 100
     : 0;
 
   const handleUpdateBudget = async () => {
@@ -46,7 +51,7 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
   };
 
   const handleCancel = () => {
-    setNewBudget(initialBudget?.amount?.toString() || "");
+    setNewBudget(safeBudgetAmount ? safeBudgetAmount.toString() : "");
     setIsEditing(false);
   };
 
@@ -64,10 +69,11 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
   }, [error]);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border border-border/70 hover:border-border elevate">
+    <Card className="dashboard-card overflow-hidden">
+      <div className="h-1 w-full bg-emerald-500/70 dark:bg-emerald-400/60" />
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex-1">
-          <CardTitle className="text-sm font-medium">
+          <CardTitle className="text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100">
             Monthly Budget (Default Account)
           </CardTitle>
           <div className="flex items-center gap-2 mt-1">
@@ -101,11 +107,11 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
               </div>
             ) : (
               <>
-                <CardDescription>
-                  {initialBudget
-                    ? `₹${currentExpenses.toFixed(
+                <CardDescription className="text-slate-600 dark:text-slate-300">
+                  {safeBudgetAmount
+                    ? `₹${safeCurrentExpenses.toFixed(
                         2
-                      )} of ₹${initialBudget.amount.toFixed(2)} spent`
+                      )} of ₹${safeBudgetAmount.toFixed(2)} spent`
                     : "No budget set"}
                 </CardDescription>
                 <Button
@@ -122,10 +128,10 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
         </div>
       </CardHeader>
       <CardContent>
-        {initialBudget && (
+        {safeBudgetAmount > 0 && (
           <div className="space-y-2">
             <Progress
-              value={percentUsed}
+              value={Math.min(Math.max(percentUsed, 0), 100)}
               extraStyles={`${
                 // add to Progress component
                 percentUsed >= 90
@@ -135,7 +141,7 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
                     : "bg-green-500"
               }`}
             />
-            <p className="text-xs text-muted-foreground text-right">
+            <p className="text-xs text-slate-600 dark:text-slate-300 text-right">
               {percentUsed.toFixed(1)}% used
             </p>
           </div>

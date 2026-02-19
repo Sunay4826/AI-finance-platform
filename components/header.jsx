@@ -60,8 +60,8 @@ const Header = () => {
   // Don't render anything until mounted to prevent hydration issues
   if (!mounted) {
     return (
-      <header className="fixed top-0 w-full z-50">
-        <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-b-xl">
+      <header className="fixed top-0 w-full z-50 px-3 md:px-5 pt-3">
+        <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-2xl">
           <Link href="/">
             <Image
               src={"/logo.png"}
@@ -72,10 +72,10 @@ const Header = () => {
             />
           </Link>
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#how-it-works" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
               How it Works
             </a>
-            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#pricing" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
               Pricing
             </a>
           </div>
@@ -83,7 +83,7 @@ const Header = () => {
             <button
               aria-label="Toggle theme"
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-accent transition-colors"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               {theme === "dark" ? (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
@@ -95,7 +95,7 @@ const Header = () => {
                 </svg>
               )}
             </button>
-            <div className="text-sm text-muted-foreground">Loading...</div>
+            <div className="text-sm text-slate-500">Loading...</div>
           </div>
         </nav>
       </header>
@@ -103,8 +103,8 @@ const Header = () => {
   }
 
   return (
-    <header className="fixed top-0 w-full z-50">
-      <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-b-xl">
+    <header className="fixed top-0 w-full z-50 px-3 md:px-5 pt-3">
+      <nav className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between glass elevate rounded-2xl">
         <Link href="/">
           <Image
             src={"/logo.png"}
@@ -121,10 +121,10 @@ const Header = () => {
             <AuthNavigation />
           ) : (
             <>
-              <a href="#how-it-works" className="text-gray-600 hover:text-blue-600">
+              <a href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition-colors">
                 How it Works
               </a>
-              <a href="#pricing" className="text-gray-600 hover:text-blue-600">
+              <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition-colors">
                 Pricing
               </a>
             </>
@@ -136,7 +136,7 @@ const Header = () => {
           <button
             aria-label="Toggle theme"
             onClick={toggleTheme}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-accent transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-200 dark:hover:bg-zinc-800"
           >
             {theme === "dark" ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
@@ -151,7 +151,7 @@ const Header = () => {
           {hasClerk && AuthButtons ? (
             <AuthButtons />
           ) : (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500">
               Configure Clerk authentication to enable login
             </div>
           )}

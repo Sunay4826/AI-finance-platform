@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Trash2, MoreHorizontal } from "lucide-react";
+import { Trash2, MoreHorizontal, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,30 +38,42 @@ export function AccountHeader({ account }) {
     await deleteFn(id);
   };
 
-  // Handle successful deletion
-  if (deletedAccount?.success) {
-    toast.success("Account deleted successfully");
-    router.push("/dashboard");
-  }
+  useEffect(() => {
+    if (deletedAccount?.success) {
+      toast.success("Account deleted successfully");
+      router.push("/dashboard");
+    }
+  }, [deletedAccount, router]);
 
-  // Handle deletion errors
-  if (deleteError) {
-    toast.error(deleteError.message || "Failed to delete account");
-  }
+  useEffect(() => {
+    if (deleteError) {
+      toast.error(deleteError.message || "Failed to delete account");
+    }
+  }, [deleteError]);
 
   return (
-    <div className="flex gap-4 items-end justify-between">
-      <div>
-        <h1 className="text-5xl sm:text-6xl font-bold tracking-tight gradient-title capitalize">
-          {name}
-        </h1>
-        <p className="text-muted-foreground">
-          {type.charAt(0) + type.slice(1).toLowerCase()} Account
-        </p>
+    <div className="dashboard-card p-5 md:p-6 flex gap-4 items-end justify-between">
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/30 flex items-center justify-center">
+          <Landmark className="h-6 w-6 text-emerald-600" />
+        </div>
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 capitalize">
+            {name}
+          </h1>
+          <p className="text-muted-foreground">
+            {type.charAt(0) + type.slice(1).toLowerCase()} Account
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col items-end gap-2 pb-2">
         <div className="flex items-center gap-2">
+          <Link href={`/transaction/create?accountId=${id}`}>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              Add Transaction
+            </Button>
+          </Link>
           <div className="text-right">
             <div className="text-xl sm:text-2xl font-bold">
               ₹{parseFloat(balance).toFixed(2)}

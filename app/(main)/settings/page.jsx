@@ -18,9 +18,9 @@ export default function SettingsPage() {
         {/* Account Management Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-red-600">Danger Zone</CardTitle>
+            <CardTitle>Account Management</CardTitle>
             <CardDescription>
-              These actions are irreversible. Please proceed with caution.
+              Manage your account access and deletion.
             </CardDescription>
           </CardHeader>
           <CardContent>

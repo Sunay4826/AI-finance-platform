@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, Info } from "lucide-react";
 import { deleteUserAccount } from "@/actions/user";
 import { toast } from "sonner";
 
@@ -14,7 +13,6 @@ export function DeleteAccountSection() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmationText, setConfirmationText] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const { user } = useUser();
   const router = useRouter();
 
   const handleDeleteAccount = async () => {
@@ -47,16 +45,16 @@ export function DeleteAccountSection() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-red-600">Delete Account</h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Permanently delete your account and all associated data. This action cannot be undone.
+        <h3 className="text-lg font-semibold">Delete Account</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          This permanently removes your account and all associated data.
         </p>
       </div>
 
-      <Alert className="border-red-200 bg-red-50">
-        <AlertTriangle className="h-4 w-4 text-red-600" />
-        <AlertDescription className="text-red-800">
-          <strong>Warning:</strong> This will permanently delete:
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          This action removes:
           <ul className="list-disc list-inside mt-2 space-y-1">
             <li>All your financial accounts</li>
             <li>All transaction history</li>
@@ -68,7 +66,7 @@ export function DeleteAccountSection() {
 
       {!showConfirmation ? (
         <Button
-          variant="destructive"
+          variant="outline"
           onClick={handleShowConfirmation}
           className="flex items-center gap-2"
         >
@@ -76,16 +74,15 @@ export function DeleteAccountSection() {
           Delete Account
         </Button>
       ) : (
-        <div className="space-y-4 p-4 border border-red-200 rounded-lg bg-red-50">
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/40">
           <div>
-            <label className="block text-sm font-medium text-red-800 mb-2">
+            <label className="block text-sm font-medium mb-2">
               To confirm, type <strong>DELETE</strong> in the box below:
             </label>
             <Input
               value={confirmationText}
               onChange={(e) => setConfirmationText(e.target.value)}
               placeholder="Type DELETE to confirm"
-              className="border-red-300 focus:border-red-500"
             />
           </div>
           

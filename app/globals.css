@@ -2,35 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --background: 210 25% 96%;
+    --foreground: 222 30% 12%;
+    --card: 210 24% 99%;
+    --card-foreground: 222 30% 12%;
+    --popover: 210 24% 99%;
+    --popover-foreground: 222 30% 12%;
+    --primary: 185 72% 28%;
+    --primary-foreground: 210 35% 98%;
+    --secondary: 210 20% 92%;
+    --secondary-foreground: 222 30% 14%;
+    --muted: 210 18% 92%;
+    --muted-foreground: 215 16% 36%;
+    --accent: 192 32% 90%;
+    --accent-foreground: 185 72% 24%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --border: 214 21% 82%;
+    --input: 214 21% 82%;
+    --ring: 185 72% 34%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -39,24 +35,24 @@ html {
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 96%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
     --ring: 0 0% 83.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -71,31 +67,67 @@ html {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 8% -20%, rgba(15, 118, 110, 0.08), transparent 62%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(14, 116, 144, 0.06), transparent 58%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
   }
 }
 
 @layer utilities {
   .gradient {
-    @apply bg-gradient-to-br from-blue-600 to-purple-600;
+    @apply bg-gradient-to-r from-teal-700 to-cyan-700;
   }
   .gradient-title {
-    @apply gradient font-extrabold tracking-tighter pr-2 pb-2 text-transparent bg-clip-text;
+    @apply gradient font-bold tracking-tight pr-2 pb-2 text-transparent bg-clip-text;
   }
   .app-bg {
-    background-image:
-      radial-gradient(1200px 600px at 0% -10%, rgba(59,130,246,0.15), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(168,85,247,0.15), transparent 60%),
-      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
+    background-image: none;
+  }
+  .dark .app-bg {
+    background-image: linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
   }
   .glass {
-    @apply bg-white/70 dark:bg-white/5 backdrop-blur-md border border-border;
+    @apply bg-slate-50/85 dark:bg-white/5 backdrop-blur-md border border-slate-300/80 dark:border-border;
   }
   .elevate {
-    box-shadow: 0 10px 30px -12px rgba(0,0,0,0.25);
+    box-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.34);
   }
   .focus-ring {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background ring-ring;
+  }
+  .dashboard-surface {
+    background-color: #edf2f7;
+    background-image: none;
+  }
+  .dark .dashboard-surface {
+    background-color: transparent;
+    background-image: none;
+  }
+  .dashboard-card {
+    @apply rounded-2xl border border-slate-300/80 bg-slate-50/90 shadow-sm transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-900/55 dark:shadow-[0_2px_10px_-6px_rgba(0,0,0,0.45)];
+  }
+  .dashboard-card:hover {
+    @apply border-slate-400/80 shadow-md dark:border-zinc-600 dark:shadow-[0_8px_18px_-12px_rgba(0,0,0,0.55)];
+  }
+  .dashboard-title {
+    @apply text-slate-900 dark:text-slate-100;
+  }
+  .section-soft {
+    @apply rounded-3xl border border-slate-300/80 bg-slate-50/70 dark:border-zinc-700 dark:bg-zinc-900/40;
+  }
+  .panel {
+    @apply rounded-2xl border border-slate-300/80 bg-slate-50/90 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/60;
+  }
+  .hero-kicker {
+    @apply inline-flex items-center rounded-full border border-teal-700/20 bg-teal-50 px-3 py-1 text-xs font-medium tracking-wide text-teal-800 dark:border-teal-400/30 dark:bg-teal-900/20 dark:text-teal-200;
+  }
+  .hero-title {
+    @apply mt-4 text-balance text-4xl font-semibold leading-tight tracking-tight text-slate-900 md:text-6xl lg:text-7xl dark:text-slate-100;
+  }
+  .hero-subtitle {
+    @apply mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg dark:text-slate-300;
   }
 }
 
@@ -104,14 +136,13 @@ html {
 }
 
 .hero-image {
-  /* transform: rotateX(20deg) scale(0.9) translateY(-50); */
-  transform: rotateX(15deg) scale(1);
+  transform: translateY(0) scale(1);
   transition: transform 0.5s ease-out;
   will-change: transform;
 }
 
 .hero-image.scrolled {
-  transform: rotateX(0deg) scale(1) translateY(40px);
+  transform: translateY(16px) scale(0.995);
 }
 
 @keyframes gradientMove {

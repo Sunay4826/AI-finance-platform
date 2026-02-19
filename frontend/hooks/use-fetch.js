@@ -9,14 +9,26 @@ const useFetch = (cb) => {
   const fn = async (...args) => {
     setLoading(true);
     setError(null);
+    setData(undefined);
 
     try {
       const response = await cb(...args);
       setData(response);
       setError(null);
+      return response;
     } catch (error) {
-      setError(error);
-      toast.error(error.message);
+      const resolvedError =
+        error instanceof Error ? error : new Error("Request failed");
+
+      console.error("[useFetch] Request failed", {
+        callback: cb?.name || "anonymous",
+        args,
+        error,
+      });
+
+      setError(resolvedError);
+      toast.error(resolvedError.message || "Something went wrong");
+      return null;
     } finally {
       setLoading(false);
     }

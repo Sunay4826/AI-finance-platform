@@ -11,6 +11,27 @@ import { request } from "@arcjet/next";
 const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
+const GEMINI_MODEL_CANDIDATES = Array.from(
+  new Set(
+    [
+      process.env.GEMINI_MODEL,
+      "gemini-2.0-flash",
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+    ]
+      .filter(Boolean)
+      .map((name) => String(name).replace(/^models\//, ""))
+  )
+);
+
+const errorMessage = (error, fallback = "Request failed") => {
+  if (error instanceof Error && typeof error.message === "string") {
+    return error.message;
+  }
+  if (typeof error === "string") return error;
+  return fallback;
+};
 
 const serializeAmount = (obj) => ({
   ...obj,
@@ -23,31 +44,42 @@ export async function createTransaction(data) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    // Get request data for ArcJet
-    const req = await request();
+    const isDevelopment = process.env.NODE_ENV !== "production";
 
-    // Check rate limit
-    const decision = await aj.protect(req, {
-      userId,
-      requested: 1, // Specify how many tokens to consume
-    });
+    // Skip ArcJet rate-limiting in local development for smoother testing.
+    if (!isDevelopment) {
+      // Get request data for ArcJet
+      const req = await request();
 
-    if (decision.isDenied()) {
-      if (decision.reason.isRateLimit()) {
-        const { remaining, reset } = decision.reason;
-        console.error({
-          code: "RATE_LIMIT_EXCEEDED",
-          details: {
-            remaining,
-            resetInSeconds: reset,
-          },
-        });
+      // Check rate limit
+      const decision = await aj.protect(req, {
+        userId,
+        requested: 1, // Specify how many tokens to consume
+      });
 
-        throw new Error("Too many requests. Please try again later.");
+      if (decision.isDenied()) {
+        if (decision.reason.isRateLimit()) {
+          const { remaining, reset } = decision.reason;
+          console.error({
+            code: "RATE_LIMIT_EXCEEDED",
+            details: {
+              remaining,
+              resetInSeconds: reset,
+            },
+          });
+
+          throw new Error("Too many requests. Please try again later.");
+        }
+
+        throw new Error("Request blocked");
       }
-
-      throw new Error("Request blocked");
     }
+
+    if (!data?.accountId || typeof data.accountId !== "string") {
+      throw new Error("Account is required");
+    }
+
+    console.info("[createTransaction] Requested accountId:", data.accountId);
 
     // Check and create user if needed - retry on failure
     let user = await checkUser();
@@ -63,13 +95,14 @@ export async function createTransaction(data) {
     const account = await db.account.findUnique({
       where: {
         id: data.accountId,
-        userId: user.id,
       },
     });
 
-    if (!account) {
+    if (!account || account.userId !== user.id) {
       throw new Error("Account not found");
     }
+
+    console.info("[createTransaction] Using accountId:", account.id);
 
     // Calculate new balance (handle Prisma Decimal type)
     const currentBalance = typeof account.balance === 'number' 
@@ -87,8 +120,14 @@ export async function createTransaction(data) {
     const transaction = await db.$transaction(async (tx) => {
       const newTransaction = await tx.transaction.create({
         data: {
-          ...data,
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
           date: transactionDate,
+          category: data.category,
+          isRecurring: data.isRecurring,
+          recurringInterval: data.recurringInterval,
+          accountId: account.id,
           userId: user.id,
           nextRecurringDate:
             data.isRecurring && data.recurringInterval
@@ -98,7 +137,7 @@ export async function createTransaction(data) {
       });
 
       await tx.account.update({
-        where: { id: data.accountId },
+        where: { id: account.id },
         data: { balance: newBalance },
       });
 
@@ -111,7 +150,7 @@ export async function createTransaction(data) {
     return { success: true, data: serializeAmount(transaction) };
   } catch (error) {
     console.error("Error creating transaction:", error);
-    throw new Error(error.message || "Failed to create transaction");
+    throw new Error(errorMessage(error, "Failed to create transaction"));
   }
 }
 
@@ -216,7 +255,7 @@ export async function updateTransaction(id, data) {
 
     return { success: true, data: serializeAmount(transaction) };
   } catch (error) {
-    throw new Error(error.message);
+    throw new Error(errorMessage(error, "Failed to update transaction"));
   }
 }
 
@@ -280,7 +319,7 @@ export async function deleteTransaction(transactionId) {
 
     return { success: true };
   } catch (error) {
-    throw new Error(error.message);
+    throw new Error(errorMessage(error, "Failed to delete transaction"));
   }
 }
 
@@ -316,7 +355,7 @@ export async function getUserTransactions(query = {}) {
 
     return { success: true, data: transactions };
   } catch (error) {
-    throw new Error(error.message);
+    throw new Error(errorMessage(error, "Failed to fetch transactions"));
   }
 }
 
@@ -395,130 +434,142 @@ export async function scanReceipt(fileData) {
       If it's not a receipt, return an empty object {}
     `;
 
-    // Use gemini-1.5-pro which supports vision/image analysis
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Gemini API format for multimodal: pass as array of parts
+    const parts = [
+      {
+        inlineData: {
+          data: base64String,
+          mimeType: mimeType,
+        },
+      },
+      {
+        text: prompt,
+      },
+    ];
 
-    // Retry logic for API overload errors
+    console.log("Calling generateContent with parts:", {
+      hasImage: !!parts[0].inlineData,
+      hasText: !!parts[1].text,
+      imageDataLength: parts[0].inlineData.data.length,
+      mimeType: parts[0].inlineData.mimeType,
+    });
+
     let lastError;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        console.log(`Attempt ${attempt}: Calling Gemini API with image data (${base64String.length} chars, mimeType: ${mimeType})`);
-        
-        // Gemini API format for multimodal: pass as array of parts
-        const parts = [
-          {
-            inlineData: {
-              data: base64String,
-              mimeType: mimeType,
-            },
-          },
-          {
-            text: prompt,
-          },
-        ];
-        
-        console.log("Calling generateContent with parts:", {
-          hasImage: !!parts[0].inlineData,
-          hasText: !!parts[1].text,
-          imageDataLength: parts[0].inlineData.data.length,
-          mimeType: parts[0].inlineData.mimeType,
-        });
-        
-        let result;
+    for (const modelName of GEMINI_MODEL_CANDIDATES) {
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          result = await model.generateContent(parts);
+          console.log(
+            `Model "${modelName}" attempt ${attempt}: calling Gemini API with image data (${base64String.length} chars, mimeType: ${mimeType})`
+          );
+
+          const result = await model.generateContent(parts);
           console.log("generateContent call successful");
-        } catch (apiError) {
-          console.error("generateContent API error:", {
-            message: apiError.message,
-            name: apiError.name,
-            stack: apiError.stack,
-            code: apiError.code,
-            status: apiError.status,
-          });
-          throw apiError;
-        }
 
-        const response = await result.response;
-        const text = response.text();
-        console.log("Gemini API response:", text.substring(0, 200)); // Log first 200 chars
-        const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
+          const response = await result.response;
+          const text = response.text();
+          console.log("Gemini API response:", text.substring(0, 200)); // Log first 200 chars
+          const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
-        try {
-          const data = JSON.parse(cleanedText);
-          
-          // Validate that we got data (not empty object)
-          if (!data || Object.keys(data).length === 0) {
-            throw new Error("No receipt data found in image");
-          }
-          
-          // Validate required fields
-          if (!data.amount || !data.date) {
-            throw new Error("Incomplete receipt data extracted");
-          }
-          
-          // Parse date and ensure it's valid
-          let parsedDate;
           try {
-            parsedDate = new Date(data.date);
-            if (isNaN(parsedDate.getTime())) {
-              throw new Error("Invalid date format");
+            const data = JSON.parse(cleanedText);
+
+            // Validate that we got data (not empty object)
+            if (!data || Object.keys(data).length === 0) {
+              throw new Error("No receipt data found in image");
             }
-          } catch (dateError) {
-            console.error("Date parsing error:", dateError);
-            // Use current date as fallback
-            parsedDate = new Date();
+
+            // Validate required fields
+            if (!data.amount || !data.date) {
+              throw new Error("Incomplete receipt data extracted");
+            }
+
+            // Parse date and ensure it's valid
+            let parsedDate;
+            try {
+              parsedDate = new Date(data.date);
+              if (isNaN(parsedDate.getTime())) {
+                throw new Error("Invalid date format");
+              }
+            } catch (dateError) {
+              console.error("Date parsing error:", dateError);
+              // Use current date as fallback
+              parsedDate = new Date();
+            }
+
+            const resultData = {
+              amount: parseFloat(data.amount),
+              date: parsedDate.toISOString(), // Serialize date as ISO string
+              description: data.description || "",
+              category: data.category || "other-expense",
+              merchantName: data.merchantName || "",
+            };
+
+            console.log("Successfully extracted receipt data:", resultData);
+            return resultData;
+          } catch (parseError) {
+            console.error("Error parsing JSON response:", parseError);
+            console.error("Response text:", cleanedText);
+            throw new Error("Invalid response format from Gemini API");
           }
-          
-          const result = {
-            amount: parseFloat(data.amount),
-            date: parsedDate.toISOString(), // Serialize date as ISO string
-            description: data.description || "",
-            category: data.category || "other-expense",
-            merchantName: data.merchantName || "",
-          };
-          
-          console.log("Successfully extracted receipt data:", result);
-          return result;
-        } catch (parseError) {
-          console.error("Error parsing JSON response:", parseError);
-          console.error("Response text:", cleanedText);
-          throw new Error("Invalid response format from Gemini API");
+        } catch (error) {
+          lastError = error;
+          const errorMessage = error?.message || "";
+          const isModelNotFound =
+            errorMessage.includes("404") &&
+            (errorMessage.includes("is not found for API version") ||
+              errorMessage.includes("not supported for generateContent"));
+
+          console.error(`Model "${modelName}" attempt ${attempt} failed:`, {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          });
+
+          if (isModelNotFound) {
+            console.log(`Model "${modelName}" unavailable, trying next model...`);
+            break;
+          }
+
+          // If it's a quota error, don't retry
+          if (
+            errorMessage.includes("429") ||
+            errorMessage.includes("quota") ||
+            errorMessage.includes("RESOURCE_EXHAUSTED")
+          ) {
+            throw new Error(
+              "Gemini API quota exceeded. Please check your billing and usage limits."
+            );
+          }
+
+          // Retry only for temporary availability failures
+          if (
+            errorMessage.includes("503") ||
+            errorMessage.includes("overloaded") ||
+            errorMessage.includes("UNAVAILABLE")
+          ) {
+            if (attempt < 2) {
+              console.log(`Waiting ${attempt * 2} seconds before retry...`);
+              await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
+              continue;
+            }
+          }
+
+          // Non-retryable error for this model; try next model candidate.
+          break;
         }
-      } catch (error) {
-        lastError = error;
-        console.error(`Attempt ${attempt} failed:`, {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        });
-        
-        // If it's a quota error, don't retry
-        if (error.message?.includes("429") || error.message?.includes("quota") || error.message?.includes("RESOURCE_EXHAUSTED")) {
-          throw new Error("Gemini API quota exceeded. Please check your billing and usage limits.");
-        }
-        
-        // If it's a 503 error and we have attempts left, wait and retry
-        if (error.message?.includes("503") || error.message?.includes("overloaded") || error.message?.includes("UNAVAILABLE")) {
-          if (attempt < 3) {
-            console.log(`Waiting ${attempt * 2} seconds before retry...`);
-            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
-            continue;
-        }
-        }
-        
-        // For other errors, if it's the last attempt, throw
-        if (attempt === 3) {
-          throw error;
-        }
-        // Otherwise, wait a bit and retry
-        console.log(`Waiting ${attempt * 2} seconds before retry...`);
-        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
       }
     }
-    
-    // If we get here, all retries failed
-    throw lastError || new Error("All retry attempts failed");
+
+    throw (
+      lastError ||
+      new Error(
+        `No supported Gemini model found. Tried: ${GEMINI_MODEL_CANDIDATES.join(
+          ", "
+        )}`
+      )
+    );
   } catch (error) {
     const errorMessage = error?.message || String(error) || "Unknown error";
     const errorString = typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage);
@@ -537,6 +588,13 @@ export async function scanReceipt(fileData) {
       throw new Error("Gemini API is currently overloaded. Please try again in a few minutes.");
     } else if (errorString.includes("API key") || errorString.includes("API_KEY") || errorString.includes("401") || errorString.includes("API_KEY_INVALID")) {
       throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.");
+    } else if (
+      errorString.includes("is not found for API version") ||
+      errorString.includes("not supported for generateContent")
+    ) {
+      throw new Error(
+        "Gemini model not available. Set GEMINI_MODEL to a supported model (recommended: gemini-1.5-flash)."
+      );
     } else {
       throw new Error(`Failed to scan receipt: ${errorString}`);
     }

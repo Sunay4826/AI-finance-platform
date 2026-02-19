@@ -1,10 +1,14 @@
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
 
 export const metadata = {
   title: "Welth",
@@ -23,11 +27,11 @@ export default function RootLayout({ children }) {
       signInFallbackRedirectUrl="/onboarding"
       signUpFallbackRedirectUrl="/onboarding"
     >
-      <html lang="en">
+      <html lang="en" data-scroll-behavior="smooth">
         <head>
           <link rel="icon" href="/logo-sm.png" sizes="any" />
         </head>
-        <body className={`${inter.className} app-bg`}>
+        <body className={`${geist.className} ${geist.variable} app-bg`}>
           <Header />
           <main className="min-h-screen pt-20">{children}</main>
           <Toaster richColors />

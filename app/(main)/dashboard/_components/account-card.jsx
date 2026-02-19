@@ -87,12 +87,15 @@ export function AccountCard({ account }) {
   }, [deleteError]);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 group relative border border-border/70 hover:border-border elevate">
+    <Card className="dashboard-card group relative overflow-hidden min-h-[200px]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <Link href={`/account/${id}`} className="flex-1">
-          <CardTitle className="text-sm font-medium capitalize">
+          <CardTitle className="text-lg font-semibold capitalize text-slate-900 dark:text-slate-100">
             {name}
           </CardTitle>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {type.charAt(0) + type.slice(1).toLowerCase()} Account
+          </p>
         </Link>
         <div className="flex items-center gap-2">
           <Switch
@@ -130,14 +133,14 @@ export function AccountCard({ account }) {
       </CardHeader>
       <Link href={`/account/${id}`}>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-4xl md:text-[2.25rem] font-bold tracking-tight text-slate-900 dark:text-slate-100">
             ₹{parseFloat(balance).toFixed(2)}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {type.charAt(0) + type.slice(1).toLowerCase()} Account
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Current Balance
           </p>
         </CardContent>
-        <CardFooter className="flex justify-between text-sm text-muted-foreground">
+        <CardFooter className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
           <div className="flex items-center">
             <ArrowUpRight className="mr-1 h-4 w-4 text-green-500" />
             Income
